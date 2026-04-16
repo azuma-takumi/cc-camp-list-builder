@@ -1,0 +1,74 @@
+# 書籍情報取得スキル
+
+スプシに入力された本のタイトルから、著者やジャンルを自動取得して記録する。
+
+---
+
+## 使う場面
+
+- ユーザーが「取得して」「本の情報取って」と言ったとき
+
+---
+
+## 実行手順
+
+### Step 1: 現在の状態を確認する
+
+スプシの「読書ログ」シートから、処理対象のデータを取得する。
+
+```bash
+node --input-type=module -e "
+import { readSheet, MAIN_SHEET } from './tools/lib/sheets.mjs';
+const rows = await readSheet(MAIN_SHEET);
+const dataRows = rows.slice(1);
+const pending = dataRows.filter(r => r[0] && !r[1]);
+console.log(JSON.stringify({ total: dataRows.length, pending: pending.length }));
+"
+```
+
+ユーザーへの報告:
+
+```text
+読書ログシートを確認しました。
+
+- 全データ: ○件
+- 未処理: ○件
+
+処理を実行しますか？
+```
+
+### Step 2: メイン処理を実行する
+
+ユーザーの確認を取ってから実行する。
+
+```bash
+node tools/fetch-book-info.mjs
+```
+
+### Step 3: 結果を報告する
+
+```text
+処理が完了しました。
+
+- 成功: ○件
+- スキップ: ○件
+- エラー: ○件
+
+スプシを確認してみてください。
+```
+
+---
+
+## エラーが起きた場合
+
+1. エラー内容を確認する
+2. ユーザーに「○○が原因でした」と平易に説明する
+3. 可能であれば修正して再実行する
+
+---
+
+## 基本姿勢
+
+- 処理前に必ず対象件数を見せて確認を取る
+- エラーが1件あっても、残りは続けて処理する
+- 完了後は必ず結果のサマリーを報告する

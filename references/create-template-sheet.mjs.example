@@ -1,0 +1,101 @@
+#!/usr/bin/env node
+
+/**
+ * create-template-sheet.mjs — テンプレートスプレッドシートを新規作成する
+ *
+ * ヘッダー行と列幅が設定済みのスプレッドシートを作成し、
+ * スプレッドシートIDを .env に自動保存する。
+ *
+ * Usage: node tools/create-template-sheet.mjs
+ */
+
+import { google } from "googleapis";
+import { getAuthClient, saveSpreadsheetId } from "./lib/sheets.mjs";
+
+const SPREADSHEET_TITLE = "読書ログ管理";
+const SHEET_NAME = "読書ログ";
+const HEADERS = ["タイトル", "著者", "ジャンル", "取得日"];
+const COLUMN_WIDTHS = [250, 150, 120, 160];
+
+async function main() {
+  const auth = getAuthClient();
+  const sheets = google.sheets({ version: "v4", auth });
+
+  console.log("スプレッドシートを作成中...");
+
+  const createRes = await sheets.spreadsheets.create({
+    requestBody: {
+      properties: { title: SPREADSHEET_TITLE },
+      sheets: [
+        {
+          properties: {
+            title: SHEET_NAME,
+            gridProperties: { frozenRowCount: 1 },
+          },
+        },
+      ],
+    },
+  });
+
+  const spreadsheetId = createRes.data.spreadsheetId;
+  const sheetId = createRes.data.sheets[0].properties.sheetId;
+  const spreadsheetUrl = createRes.data.spreadsheetUrl;
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `'${SHEET_NAME}'!A1`,
+    valueInputOption: "RAW",
+    requestBody: { values: [HEADERS] },
+  });
+
+  const columnWidthRequests = COLUMN_WIDTHS.map((width, i) => ({
+    updateDimensionProperties: {
+      range: {
+        sheetId,
+        dimension: "COLUMNS",
+        startIndex: i,
+        endIndex: i + 1,
+      },
+      properties: { pixelSize: width },
+      fields: "pixelSize",
+    },
+  }));
+
+  const headerStyleRequest = {
+    repeatCell: {
+      range: {
+        sheetId,
+        startRowIndex: 0,
+        endRowIndex: 1,
+        startColumnIndex: 0,
+        endColumnIndex: HEADERS.length,
+      },
+      cell: {
+        userEnteredFormat: {
+          textFormat: { bold: true },
+          backgroundColor: { red: 0.9, green: 0.9, blue: 0.9 },
+        },
+      },
+      fields: "userEnteredFormat(textFormat,backgroundColor)",
+    },
+  };
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [...columnWidthRequests, headerStyleRequest],
+    },
+  });
+
+  saveSpreadsheetId(spreadsheetId);
+
+  console.log(`✓ スプレッドシートを作成しました`);
+  console.log(`  タイトル: ${SPREADSHEET_TITLE}`);
+  console.log(`  URL: ${spreadsheetUrl}`);
+  console.log(`  SPREADSHEET_ID を .env に保存しました`);
+}
+
+main().catch((err) => {
+  console.error("Error:", err.message);
+  process.exit(1);
+});

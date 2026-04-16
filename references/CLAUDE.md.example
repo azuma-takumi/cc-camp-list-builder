@@ -1,0 +1,142 @@
+# reading-log — 読書ログ管理ツール
+
+読んだ本をスプレッドシートで管理するツール。
+タイトルを入力するだけで、著者やジャンルを自動取得して記録する。
+
+## コマンド一覧
+
+```bash
+npm install                                  # 依存関係インストール
+node auth-google.mjs                         # Google OAuth 認証
+node tools/init-spreadsheet.mjs              # スプシ接続テスト（--id でID保存）
+node tools/create-template-sheet.mjs         # テンプレートスプシ新規作成
+node tools/fetch-book-info.mjs               # 書籍情報の一括取得（メイン）
+```
+
+## プロジェクト構成
+
+```
+reading-log/
+├── CLAUDE.md              ← このファイル（全スキル定義を含む）
+├── package.json
+├── .env.example           ← 環境変数テンプレート
+├── .env                   ← 実際の環境変数（gitignore対象）
+├── auth-google.mjs        ← Google OAuth フロー
+├── setup/
+│   └── SETUP-FOR-CC.md   ← セットアップ手順書
+├── tools/
+│   ├── lib/sheets.mjs    ← Sheets API ヘルパー
+│   ├── init-spreadsheet.mjs
+│   ├── create-template-sheet.mjs
+│   └── fetch-book-info.mjs ← メイン処理スクリプト
+├── .cursor/skills/fetch-books/
+│   └── SKILL.md          ← 書籍情報取得スキル
+└── credentials/tokens.json ← Google OAuth（gitignore対象）
+```
+
+## 共通ルール
+
+- ユーザーはプログラミング未経験者の場合がある。1ステップずつ案内する
+- ユーザーにファイルを直接編集させない。必要な値はチャットで受け取り、エージェントが設定する
+- エラーが起きたら、何が起きたか・次に何をすればいいかを平易に伝える
+
+---
+
+## トリガー
+
+| ユーザーの発話 | 発動するスキル |
+|--------------|-------------|
+| 「開始」「始める」「スタート」 | セットアップスキル |
+| 「セットアップして」「初期設定して」 | セットアップスキル |
+| 「取得して」「本の情報取って」 | 書籍情報取得スキル |
+| 「履歴見せて」「結果は？」 | 履歴確認スキル |
+
+---
+
+## セットアップスキル
+
+初回セットアップ専用。`setup/SETUP-FOR-CC.md` を読み、その手順に従って進行する。
+
+### 最初にやること
+
+**必ず `setup/SETUP-FOR-CC.md` を読む。** このファイルを唯一の正本として扱う。
+
+### 完了の定義
+
+- `.env` が存在し、`GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`SPREADSHEET_ID` が入っている
+- `credentials/tokens.json` が存在する
+- `node tools/init-spreadsheet.mjs` が正常終了する
+
+### 完了後の案内
+
+```text
+セットアップが完了しました！
+
+「取得して」と言えば、スプシに登録した本の情報を自動取得できます。
+```
+
+---
+
+## 書籍情報取得スキル（メイン）
+
+`.cursor/skills/fetch-books/SKILL.md` を読んで実行する。
+
+### 使う場面
+
+- ユーザーが「取得して」「本の情報取って」と言ったとき
+
+### フロー概要
+
+1. スプシの「読書ログ」シートから未処理の行を取得
+2. 対象件数をユーザーに伝えて確認を取る
+3. Google Books API で書籍情報を取得
+4. スプシに結果を記録（著者、ジャンル、取得日）
+5. 完了報告
+
+---
+
+## 履歴確認スキル
+
+スプシに記録された結果を表示する。
+
+### 実行手順
+
+```bash
+node --input-type=module -e "
+import { readSheet, MAIN_SHEET } from './tools/lib/sheets.mjs';
+const rows = await readSheet(MAIN_SHEET);
+rows.forEach(r => console.log(JSON.stringify(r)));
+"
+```
+
+---
+
+## スプレッドシート構成
+
+SSOT: Google スプレッドシート（テンプレート作成方式）
+
+### 読書ログシート
+
+| 列 | 内容 | 入力/出力 |
+|----|------|----------|
+| A: タイトル | 本のタイトル | ユーザー入力 |
+| B: 著者 | 著者名（自動取得） | 自動 |
+| C: ジャンル | カテゴリ（自動取得） | 自動 |
+| D: 取得日 | yyyy/M/d H:mm:ss | 自動 |
+
+---
+
+## よくあるエラーと対処法
+
+| エラーメッセージ | 原因 | 対応 |
+|---------------|------|------|
+| `GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET が未設定です` | `.env` がないか値が空 | セットアップスキルを実行 |
+| `Token file not found` | Google 認証未完了 | `node auth-google.mjs` を実行 |
+| `SPREADSHEET_ID not set` | スプシ未設定 | テンプレートスプシを作成 |
+
+---
+
+## 技術スタック
+
+- Node.js (ESM)
+- `googleapis` — Sheets API v4

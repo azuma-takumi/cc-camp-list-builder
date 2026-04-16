@@ -1,0 +1,50 @@
+#!/usr/bin/env node
+
+/**
+ * init-spreadsheet.mjs — スプレッドシート接続テスト
+ *
+ * スプレッドシートに接続できるか確認する。
+ * --id オプションでスプレッドシートIDを .env に保存できる。
+ *
+ * Usage:
+ *   node tools/init-spreadsheet.mjs              # 接続テスト
+ *   node tools/init-spreadsheet.mjs --id XXXXX   # IDを保存して接続テスト
+ */
+
+import { getSheets, saveSpreadsheetId, SPREADSHEET_ID, MAIN_SHEET } from "./lib/sheets.mjs";
+
+async function main() {
+  const idFlag = process.argv.indexOf("--id");
+  if (idFlag !== -1 && process.argv[idFlag + 1]) {
+    const newId = process.argv[idFlag + 1];
+    saveSpreadsheetId(newId);
+    console.log(`SPREADSHEET_ID を保存しました: ${newId}`);
+  }
+
+  if (!SPREADSHEET_ID) {
+    console.error("Error: SPREADSHEET_ID が設定されていません");
+    console.error("Usage: node tools/init-spreadsheet.mjs --id YOUR_SPREADSHEET_ID");
+    process.exit(1);
+  }
+
+  console.log(`接続テスト中... (ID: ${SPREADSHEET_ID})`);
+  const sheets = await getSheets();
+  const res = await sheets.spreadsheets.get({
+    spreadsheetId: SPREADSHEET_ID,
+  });
+
+  console.log(`✓ 接続成功: 「${res.data.properties.title}」`);
+
+  const sheetNames = res.data.sheets.map((s) => s.properties.title);
+  if (sheetNames.includes(MAIN_SHEET)) {
+    console.log(`✓ シート「${MAIN_SHEET}」が見つかりました`);
+  } else {
+    console.log(`⚠ シート「${MAIN_SHEET}」が見つかりません`);
+    console.log(`  存在するシート: ${sheetNames.join(", ")}`);
+  }
+}
+
+main().catch((err) => {
+  console.error("Error:", err.message);
+  process.exit(1);
+});

@@ -1,0 +1,17 @@
+{
+  "name": "reading-log",
+  "version": "1.0.0",
+  "description": "読んだ本をスプレッドシートで管理するツール",
+  "type": "module",
+  "scripts": {
+    "auth": "node auth-google.mjs",
+    "init": "node tools/init-spreadsheet.mjs",
+    "create-template": "node tools/create-template-sheet.mjs",
+    "fetch": "node tools/fetch-book-info.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "googleapis": "^148.0.0",
+    "open": "^11.0.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "cc-camp-list-builder",
+  "version": "1.0.0",
+  "description": "営業リスト作成案件向けのスプレッドシート自動化ツール",
+  "type": "module",
+  "scripts": {
+    "auth": "node auth-google.mjs",
+    "init": "node tools/init-spreadsheet.mjs",
+    "run": "node tools/run-sales-list.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "googleapis": "^148.0.0",
+    "open": "^11.0.0"
+  }
+}
