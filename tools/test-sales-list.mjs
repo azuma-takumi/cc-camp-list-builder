@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 import {
   appendRows,
@@ -11,9 +10,9 @@ import {
   updateCell,
 } from "./lib/sheets.mjs";
 import { validateAndRepairUrl } from "./lib/url-checker.mjs";
+import { appendDatedLog, writeStandardSummary } from "./lib/summary-writer.mjs";
 
 const LOG_DIR = new URL("../logs/", import.meta.url).pathname;
-const RESULT_PATH = join(LOG_DIR, "test-sales-list-summary.md");
 
 const DEMO_COMPANIES = [
   {
@@ -53,21 +52,8 @@ const DEMO_COMPANIES = [
   },
 ];
 
-function ensureLogDir() {
-  if (!existsSync(LOG_DIR)) {
-    mkdirSync(LOG_DIR, { recursive: true });
-  }
-}
-
-function writeSummary(content) {
-  ensureLogDir();
-  writeFileSync(RESULT_PATH, content, "utf-8");
-}
-
 function appendErrorLog(lines) {
-  ensureLogDir();
-  const datedPath = join(LOG_DIR, `run-${new Date().toISOString().slice(0, 10)}.log`);
-  appendFileSync(datedPath, `${lines.join("\n")}\n\n`, "utf-8");
+  appendDatedLog({ logDir: LOG_DIR, prefix: "run", lines });
 }
 
 async function checkUrlColumns(sheetName, rows) {
@@ -140,35 +126,46 @@ async function main() {
   const rows = await readSheetValues(sheetName);
   const urlCheck = await checkUrlColumns(sheetName, rows);
 
-  const summary = [
-    "# 営業リストテスト結果",
-    "",
-    `スプレッドシートURL: ${created.spreadsheetUrl}`,
-    `登録件数: ${DEMO_COMPANIES.length}件`,
-    `URLチェック対象: ${urlCheck.checked}件`,
-    `自動補正: ${urlCheck.fixed}件`,
-    `問題あり: ${urlCheck.failed}件`,
-    "",
-    "## 登録した会社",
-    ...DEMO_COMPANIES.map((company) => `- ${company.companyName}`),
+  const sections = [
+    {
+      heading: "登録した会社",
+      lines: DEMO_COMPANIES.map((company) => `- ${company.companyName}`),
+    },
   ];
 
   if (urlCheck.failedItems.length) {
-    summary.push("");
-    summary.push("## 問題が残ったURL");
-
+    const failedLines = [];
     for (const item of urlCheck.failedItems) {
-      summary.push(`- 行${item.rowNumber} / ${item.columnName}: ${item.value}`);
-      summary.push(`  ログ: ${item.logs.join(" | ")}`);
+      failedLines.push(`- 行${item.rowNumber} / ${item.columnName}: ${item.value}`);
+      failedLines.push(`  ログ: ${item.logs.join(" | ")}`);
       appendErrorLog([
         `[${new Date().toISOString()}] 行${item.rowNumber} / ${item.columnName}`,
         `値: ${item.value}`,
         ...item.logs,
       ]);
     }
+
+    sections.push({
+      heading: "問題が残ったURL",
+      lines: failedLines,
+    });
   }
 
-  writeSummary(summary.join("\n"));
+  writeStandardSummary({
+    logDir: LOG_DIR,
+    fileName: "test-sales-list-summary.md",
+    title: "営業リストテスト結果",
+    overview: [
+      { label: "スプレッドシートURL", value: created.spreadsheetUrl },
+      { label: "登録件数", value: `${DEMO_COMPANIES.length}件` },
+    ],
+    metrics: [
+      { label: "URLチェック対象", value: `${urlCheck.checked}件` },
+      { label: "URL自動補正", value: `${urlCheck.fixed}件` },
+      { label: "URL問題あり", value: `${urlCheck.failed}件` },
+    ],
+    sections,
+  });
 
   console.log(`SPREADSHEET_ID=${created.spreadsheetId}`);
   console.log(`SPREADSHEET_URL=${created.spreadsheetUrl}`);

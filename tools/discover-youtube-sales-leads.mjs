@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { readSheetValues, saveSpreadsheetId, updateRows } from "./lib/sheets.mjs";
@@ -17,6 +16,7 @@ import {
 } from "./lib/youtube-api.mjs";
 import { searchGoogleWeb } from "./lib/google-search-api.mjs";
 import { searchBraveWeb } from "./lib/brave-search-api.mjs";
+import { appendDatedLog, writeStandardSummary } from "./lib/summary-writer.mjs";
 
 const SPREADSHEET_ID = "1E7sL6TjDiGWUF77uMAc88XK7OzXXS8wgDgwInI5Ad1c";
 const SHEET_NAME = "スポーツ用品業界：メールアドレス";
@@ -28,7 +28,6 @@ const QUERY_RESULTS_LIMIT = Number(process.env.QUERY_RESULTS_LIMIT || "10");
 const MAX_CANDIDATES = Number(process.env.MAX_CANDIDATES || "120");
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LOG_DIR = join(__dirname, "..", "logs");
-const RESULT_PATH = join(LOG_DIR, "youtube-lead-discovery-summary.md");
 
 const FALLBACK_CANDIDATES = [
   {
@@ -113,21 +112,8 @@ function normalizeEmailSourceForSheet(value) {
   return "その他（HP）";
 }
 
-function ensureLogDir() {
-  if (!existsSync(LOG_DIR)) {
-    mkdirSync(LOG_DIR, { recursive: true });
-  }
-}
-
-function writeSummary(content) {
-  ensureLogDir();
-  writeFileSync(RESULT_PATH, content, "utf-8");
-}
-
 function appendDiscoveryLog(lines) {
-  ensureLogDir();
-  const datedPath = join(LOG_DIR, `lead-discovery-${new Date().toISOString().slice(0, 10)}.log`);
-  appendFileSync(datedPath, `${lines.join("\n")}\n\n`, "utf-8");
+  appendDatedLog({ logDir: LOG_DIR, prefix: "lead-discovery", lines });
 }
 
 function findHeaderRow(rows) {
@@ -350,50 +336,63 @@ async function main() {
     await updateRows(SHEET_NAME, startRow, 0, preparedRows);
   }
 
-  const summaryLines = [
-    "# YouTube営業リスト探索結果",
-    "",
-    `既存空欄の補完: ${backfilledRows.length}`,
-    `開始行: ${startRow}`,
-    `候補数: ${candidates.length}`,
-    `追加目標件数: ${TARGET_WRITE_COUNT}`,
-    `書き込み成功: ${readyLeads.length}`,
-    `メール未発見: ${unresolved.length}`,
-  ];
+  const quotaSummary = getYoutubeQuotaUsageSummary();
+  const sections = [];
 
   if (backfilledRows.length) {
-    summaryLines.push("");
-    summaryLines.push("## 補完した既存行");
-    for (const row of backfilledRows) {
-      summaryLines.push(`- ${row.rowNumber}行目 ${row.channelName} / ${row.companyName || "-"} / ${row.representativeName || "-"}`);
-    }
+    sections.push({
+      heading: "補完した既存行",
+      lines: backfilledRows.map(
+        (row) => `- ${row.rowNumber}行目 ${row.channelName} / ${row.companyName || "-"} / ${row.representativeName || "-"}`
+      ),
+    });
   }
 
   if (readyLeads.length) {
-    summaryLines.push("");
-    summaryLines.push("## 書き込んだ候補");
-    for (const lead of readyLeads) {
-      summaryLines.push(`- ${lead.channelName} / ${lead.email}`);
-    }
+    sections.push({
+      heading: "書き込んだ候補",
+      lines: readyLeads.map((lead) => `- ${lead.channelName} / ${lead.email}`),
+    });
   }
 
   if (unresolved.length) {
-    summaryLines.push("");
-    summaryLines.push("## 未解決候補");
+    const unresolvedLines = [];
     for (const lead of unresolved) {
-      summaryLines.push(`- ${lead.channelName} / site: ${lead.siteUrl}`);
-      summaryLines.push(`  ログ: ${lead.logs.join(" | ")}`);
+      unresolvedLines.push(`- ${lead.channelName} / site: ${lead.siteUrl}`);
+      unresolvedLines.push(`  ログ: ${lead.logs.join(" | ")}`);
       appendDiscoveryLog([
         `[${new Date().toISOString()}] ${lead.channelName}`,
         `site=${lead.siteUrl}`,
         ...lead.logs,
       ]);
     }
+
+    sections.push({
+      heading: "未解決候補",
+      lines: unresolvedLines,
+    });
   }
 
-  writeSummary(summaryLines.join("\n"));
+  writeStandardSummary({
+    logDir: LOG_DIR,
+    fileName: "youtube-lead-discovery-summary.md",
+    title: "YouTube営業リスト探索結果",
+    overview: [
+      { label: "既存空欄の補完", value: backfilledRows.length },
+      { label: "開始行", value: startRow },
+      { label: "候補数", value: candidates.length },
+      { label: "追加目標件数", value: TARGET_WRITE_COUNT },
+    ],
+    metrics: [
+      { label: "書き込み成功", value: readyLeads.length },
+      { label: "メール未発見", value: unresolved.length },
+      { label: "YouTube試行ユニット", value: quotaSummary.estimatedAttemptedUnits },
+      { label: "YouTube成功ユニット", value: quotaSummary.estimatedSuccessfulUnits },
+      { label: "YouTube残量推定", value: quotaSummary.estimatedRemainingUnits },
+    ],
+    sections,
+  });
 
-  const quotaSummary = getYoutubeQuotaUsageSummary();
   console.log(`YOUTUBE_ATTEMPTED_UNITS=${quotaSummary.estimatedAttemptedUnits}`);
   console.log(`YOUTUBE_SUCCESSFUL_UNITS=${quotaSummary.estimatedSuccessfulUnits}`);
   console.log(`YOUTUBE_REMAINING_ESTIMATE=${quotaSummary.estimatedRemainingUnits}`);

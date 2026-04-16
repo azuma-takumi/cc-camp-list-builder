@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 import {
   readSheetValues,
@@ -10,13 +9,12 @@ import {
   updateRows,
 } from "./lib/sheets.mjs";
 import { validateAndRepairUrl } from "./lib/url-checker.mjs";
+import { appendDatedLog, writeStandardSummary } from "./lib/summary-writer.mjs";
 
 const SPREADSHEET_ID = "1E7sL6TjDiGWUF77uMAc88XK7OzXXS8wgDgwInI5Ad1c";
 const SHEET_NAME = "スポーツ用品業界：メールアドレス";
 const WRITER_NAME = "東たくみ";
 const LOG_DIR = new URL("../logs/", import.meta.url).pathname;
-const RESULT_PATH = join(LOG_DIR, "crowdworks-test-summary.md");
-
 const TEST_ROWS = [
   {
     channelName: "スポーツマーケットJP",
@@ -75,21 +73,8 @@ const TEST_ROWS = [
   },
 ];
 
-function ensureLogDir() {
-  if (!existsSync(LOG_DIR)) {
-    mkdirSync(LOG_DIR, { recursive: true });
-  }
-}
-
-function writeSummary(content) {
-  ensureLogDir();
-  writeFileSync(RESULT_PATH, content, "utf-8");
-}
-
 function appendErrorLog(lines) {
-  ensureLogDir();
-  const datedPath = join(LOG_DIR, `run-${new Date().toISOString().slice(0, 10)}.log`);
-  appendFileSync(datedPath, `${lines.join("\n")}\n\n`, "utf-8");
+  appendDatedLog({ logDir: LOG_DIR, prefix: "run", lines });
 }
 
 function findHeaderRow(rows) {
@@ -169,34 +154,43 @@ async function main() {
   await updateRows(SHEET_NAME, startRow, 0, preparedRows);
   const urlCheck = await checkYoutubeUrlColumn(startRow, TEST_ROWS.length);
 
-  const summary = [
-    "# CrowdWorksシート投入テスト",
-    "",
-    `対象シート: https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`,
-    `対象タブ: ${SHEET_NAME}`,
-    `開始行: ${startRow}`,
-    `投入件数: ${TEST_ROWS.length}件`,
-    `URLチェック: ${urlCheck.checked}件`,
-    `URL自動補正: ${urlCheck.fixed}件`,
-    `URL問題あり: ${urlCheck.failed}件`,
-  ];
+  const sections = [];
 
   if (urlCheck.failedItems.length) {
-    summary.push("");
-    summary.push("## 問題が残ったURL");
-
+    const failedLines = [];
     for (const item of urlCheck.failedItems) {
-      summary.push(`- 行${item.rowNumber}: ${item.value}`);
-      summary.push(`  ログ: ${item.logs.join(" | ")}`);
+      failedLines.push(`- 行${item.rowNumber}: ${item.value}`);
+      failedLines.push(`  ログ: ${item.logs.join(" | ")}`);
       appendErrorLog([
         `[${new Date().toISOString()}] 行${item.rowNumber} / YouTubeチャンネルURL`,
         `値: ${item.value}`,
         ...item.logs,
       ]);
     }
+
+    sections.push({
+      heading: "問題が残ったURL",
+      lines: failedLines,
+    });
   }
 
-  writeSummary(summary.join("\n"));
+  writeStandardSummary({
+    logDir: LOG_DIR,
+    fileName: "crowdworks-test-summary.md",
+    title: "CrowdWorksシート投入テスト",
+    overview: [
+      { label: "対象シート", value: `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit` },
+      { label: "対象タブ", value: SHEET_NAME },
+      { label: "開始行", value: startRow },
+      { label: "投入件数", value: `${TEST_ROWS.length}件` },
+    ],
+    metrics: [
+      { label: "URLチェック対象", value: `${urlCheck.checked}件` },
+      { label: "URL自動補正", value: `${urlCheck.fixed}件` },
+      { label: "URL問題あり", value: `${urlCheck.failed}件` },
+    ],
+    sections,
+  });
 
   console.log(`START_ROW=${startRow}`);
   console.log(`ROWS=${TEST_ROWS.length}`);

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 import {
   getSpreadsheetMeta,
@@ -11,11 +10,10 @@ import {
 } from "./lib/sheets.mjs";
 import { parseRequestText, summarizeRequest } from "./lib/request-parser.mjs";
 import { validateAndRepairUrl } from "./lib/url-checker.mjs";
+import { appendDatedLog, writeStandardSummary } from "./lib/summary-writer.mjs";
 
 const PROJECT_ROOT = new URL("..", import.meta.url).pathname;
 const LOG_DIR = join(PROJECT_ROOT, "logs");
-const LAST_RESULT_PATH = join(LOG_DIR, "latest-run-summary.md");
-
 function getArgValue(flagName) {
   const index = process.argv.indexOf(flagName);
   return index !== -1 ? process.argv[index + 1] : "";
@@ -40,21 +38,8 @@ function detectUrlColumns(headers) {
     );
 }
 
-function ensureLogDir() {
-  if (!existsSync(LOG_DIR)) {
-    mkdirSync(LOG_DIR, { recursive: true });
-  }
-}
-
-function writeSummary(content) {
-  ensureLogDir();
-  writeFileSync(LAST_RESULT_PATH, content, "utf-8");
-}
-
 function appendErrorLog(lines) {
-  ensureLogDir();
-  const datedPath = join(LOG_DIR, `run-${new Date().toISOString().slice(0, 10)}.log`);
-  appendFileSync(datedPath, `${lines.join("\n")}\n\n`, "utf-8");
+  appendDatedLog({ logDir: LOG_DIR, prefix: "run", lines });
 }
 
 async function checkUrlColumns(sheetName, rows) {
@@ -136,33 +121,22 @@ async function main() {
   const headers = rows[0] || [];
   const urlCheck = await checkUrlColumns(targetSheet, rows);
 
-  const summaryLines = [
-    "# 営業リスト作成 自動化サマリー",
-    "",
-    `スプレッドシート: ${meta.properties?.title || spreadsheetId}`,
-    `対象シート: ${targetSheet}`,
-    `列数: ${headers.length}`,
-    `データ行数: ${Math.max(rows.length - 1, 0)}`,
-    "",
-    "## 依頼内容の整理",
-    summarizeRequest(parsedRequest),
-    "",
-    "## シート列",
-    headers.length ? headers.map((header) => `- ${header}`).join("\n") : "- ヘッダーなし",
-    "",
-    "## URLチェック結果",
-    `- チェック対象: ${urlCheck.checked}件`,
-    `- 自動補正: ${urlCheck.fixed}件`,
-    `- 問題あり: ${urlCheck.failed}件`,
+  const sections = [
+    {
+      heading: "依頼内容の整理",
+      lines: summarizeRequest(parsedRequest).split("\n"),
+    },
+    {
+      heading: "シート列",
+      lines: headers.length ? headers.map((header) => `- ${header}`) : ["- ヘッダーなし"],
+    },
   ];
 
   if (urlCheck.failedItems.length) {
-    summaryLines.push("");
-    summaryLines.push("## 問題が残ったURL");
-
+    const failedLines = [];
     for (const item of urlCheck.failedItems) {
-      summaryLines.push(`- 行${item.rowNumber} / ${item.columnName}: ${item.originalValue}`);
-      summaryLines.push(`  ログ: ${item.logs.join(" | ")}`);
+      failedLines.push(`- 行${item.rowNumber} / ${item.columnName}: ${item.originalValue}`);
+      failedLines.push(`  ログ: ${item.logs.join(" | ")}`);
 
       appendErrorLog([
         `[${new Date().toISOString()}] 行${item.rowNumber} / ${item.columnName}`,
@@ -170,9 +144,30 @@ async function main() {
         ...item.logs,
       ]);
     }
+
+    sections.push({
+      heading: "問題が残ったURL",
+      lines: failedLines,
+    });
   }
 
-  writeSummary(summaryLines.join("\n"));
+  writeStandardSummary({
+    logDir: LOG_DIR,
+    fileName: "latest-run-summary.md",
+    title: "営業リスト作成 自動化サマリー",
+    overview: [
+      { label: "スプレッドシート", value: meta.properties?.title || spreadsheetId },
+      { label: "対象シート", value: targetSheet },
+      { label: "列数", value: headers.length },
+      { label: "データ行数", value: Math.max(rows.length - 1, 0) },
+    ],
+    metrics: [
+      { label: "URLチェック対象", value: `${urlCheck.checked}件` },
+      { label: "URL自動補正", value: `${urlCheck.fixed}件` },
+      { label: "URL問題あり", value: `${urlCheck.failed}件` },
+    ],
+    sections,
+  });
 
   console.log("営業リスト作成の初期解析が完了しました。");
   console.log(`対象スプレッドシート: ${meta.properties?.title || spreadsheetId}`);
