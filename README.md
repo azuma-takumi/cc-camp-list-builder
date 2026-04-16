@@ -4,6 +4,11 @@
 
 この版は `チャット中心` で使う前提です。あなたは `スプレッドシートURL` と `依頼文` を渡します。システム側が列構成の確認と URL チェックを行い、問題がないときは静かに進み、問題が残るときだけログ付きで知らせます。
 
+## GitHub
+
+- リポジトリ: `https://github.com/azuma-takumi/cc-camp-list-builder.git`
+- Git の確認メモ: `GIT-GUIDE.md`
+
 ## できること
 
 - スプレッドシートURLから対象シートを読む
@@ -64,3 +69,21 @@ node tools/run-sales-list.mjs \
 - エラーログ: `logs/run-YYYY-MM-DD.log`
 
 URLチェックで問題がなければ、特別な通知は出しません。問題が残ったものだけ、行番号とログが出ます。
+
+## Git の最小運用
+
+状態確認:
+
+```bash
+git status
+```
+
+変更を GitHub に反映:
+
+```bash
+git add .
+git commit -m "更新内容"
+git push
+```
+
+詳しい見方や `??` `!!` の意味は `GIT-GUIDE.md` を参照してください。

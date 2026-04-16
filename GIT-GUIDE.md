@@ -154,6 +154,31 @@ git status
 git commit -m "Initial project setup"
 ```
 
+## GitHub に反映する手順
+
+このプロジェクトの GitHub リポジトリ:
+
+```bash
+https://github.com/azuma-takumi/cc-camp-list-builder.git
+```
+
+新しい変更を反映するとき:
+
+```bash
+cd "/Users/user/addness/cursor/CCキャンプ-リスト作成"
+git status
+git add .
+git commit -m "更新内容"
+git push
+```
+
+GitHub 側の最新を取り込むとき:
+
+```bash
+cd "/Users/user/addness/cursor/CCキャンプ-リスト作成"
+git pull
+```
+
 ## このプロジェクトでの注意
 
 - `記入者が東たくみ以外の行` は触らない
