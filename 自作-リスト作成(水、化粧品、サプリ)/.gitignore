@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# environment / secrets
+.env
+.env.*
+!.env.example
+
+# OAuth / local credentials
+credentials/
+
+# local logs / exports
+logs/
+
+# OS files
+.DS_Store
+

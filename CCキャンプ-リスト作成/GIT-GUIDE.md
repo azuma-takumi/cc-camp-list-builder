@@ -4,10 +4,10 @@
 
 ## 基本コマンド
 
-まずはこのフォルダで実行します。
+まずはリポジトリのルート（このフォルダ）で実行します。
 
 ```bash
-cd "/Users/user/addness/cursor/CCキャンプ-リスト作成"
+cd "/Users/user/addness/cursor/リスト作成"
 ```
 
 ### 1. 今の状態を見る
@@ -123,7 +123,7 @@ node_modules/*
 迷ったらこれだけで十分です。
 
 ```bash
-cd "/Users/user/addness/cursor/CCキャンプ-リスト作成"
+cd "/Users/user/addness/cursor/リスト作成"
 git status
 git status --short --ignored
 git log --oneline --decorate -n 5
@@ -132,7 +132,7 @@ git log --oneline --decorate -n 5
 ## コミット前の確認手順
 
 ```bash
-cd "/Users/user/addness/cursor/CCキャンプ-リスト作成"
+cd "/Users/user/addness/cursor/リスト作成"
 git status --short --ignored
 git add .
 git status
@@ -148,7 +148,7 @@ git diff --staged
 ## 最初のコミットを作る手順
 
 ```bash
-cd "/Users/user/addness/cursor/CCキャンプ-リスト作成"
+cd "/Users/user/addness/cursor/リスト作成"
 git add .
 git status
 git commit -m "Initial project setup"
@@ -165,7 +165,7 @@ https://github.com/azuma-takumi/cc-camp-list-builder.git
 新しい変更を反映するとき:
 
 ```bash
-cd "/Users/user/addness/cursor/CCキャンプ-リスト作成"
+cd "/Users/user/addness/cursor/リスト作成"
 git status
 git add .
 git commit -m "更新内容"
@@ -175,7 +175,7 @@ git push
 GitHub 側の最新を取り込むとき:
 
 ```bash
-cd "/Users/user/addness/cursor/CCキャンプ-リスト作成"
+cd "/Users/user/addness/cursor/リスト作成"
 git pull
 ```
 

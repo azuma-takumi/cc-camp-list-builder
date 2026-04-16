@@ -1,0 +1,42 @@
+{
+  "name": "cosmetics-shop-list",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "collect": "node main.mjs",
+    "collect:yahoo": "node scrape-yahoo.mjs",
+    "mac:awake": "bash scripts/keep-mac-awake.sh",
+    "collect:yahoo:awake": "caffeinate -dims -- node scrape-yahoo.mjs",
+    "collect:yahoo:phase1": "node scrape-yahoo.mjs --phase1-only",
+    "collect:yahoo:20": "node scrape-yahoo.mjs --max-rows=20",
+    "collect:yahoo:50": "node scrape-yahoo.mjs --max-rows=50",
+    "collect:rakuten": "node scrape-rakuten.mjs",
+    "collect:tv": "node scrape-tv.mjs",
+    "collect:tv:phase1": "node scrape-tv.mjs --phase1-only",
+    "dedupe": "node dedupe-sheets-by-brand-priority.mjs",
+    "copy-tv-to-attack": "node copy-tv-to-attack-sheet.mjs",
+    "copy-own-to-attack": "node copy-own-to-attack-sheet.mjs",
+    "copy-yahoo-to-attack": "node copy-yahoo-to-attack-sheet.mjs",
+    "copy-yahoo-top50-to-attack": "node copy-yahoo-top50-to-attack-sheet.mjs",
+    "copy-yahoo-200-to-attack": "node copy-yahoo-top50-to-attack-sheet.mjs --max=200",
+    "copy-rakuten-to-attack": "node copy-rakuten-to-attack-sheet.mjs",
+    "fix-attack-tv-remove-own-rows": "node remove-mistaken-own-from-attack-tv.mjs",
+    "patch:shop-plain-text": "node patch-shop-name-plain-text.mjs",
+    "patch:html-entities": "node patch-html-entities-sheets.mjs",
+    "patch:fancl-yahoo-name": "node patch-fancl-yahoo-shop-name.mjs",
+    "check:yahoo-links": "node check-yahoo-sheet-links.mjs",
+    "fix:yahoo-talk": "node fix-yahoo-talk-urls.mjs",
+    "fix:yahoo-names": "node fix-yahoo-shop-names-main-from-row.mjs --from=2",
+    "report:yahoo-dupes": "node report-yahoo-url-category-dupes.mjs",
+    "dedupe:yahoo-url": "node dedupe-yahoo-url-category.mjs",
+    "dedupe:yahoo-url:apply": "node dedupe-yahoo-url-category.mjs --apply",
+    "fix:rakuten-names": "node fix-rakuten-shop-names-from-info.mjs --from=2",
+    "patch:headers-own-yahoo-rakuten": "node patch-header-contact-columns-own-yahoo-rakuten.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "googleapis": "^140.0.0",
+    "node-html-parser": "^6.1.0"
+  }
+}

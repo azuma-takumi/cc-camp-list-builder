@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Mac: スリープ抑止（caffeinate -dims・作業中ずっと）",
+      "type": "npm",
+      "script": "mac:awake",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true,
+        "showReuseMessage": false,
+        "clear": true
+      }
+    }
+  ]
+}
