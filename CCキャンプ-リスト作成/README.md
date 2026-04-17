@@ -9,7 +9,8 @@
 - リポジトリ: `https://github.com/azuma-takumi/cc-camp-list-builder.git`
 - Git の確認メモ: `GIT-GUIDE.md`
 - この案件の改善ログ: `IMPROVEMENTS.md`
-- 横断の学び一覧: `/Users/user/addness/CROSS-PROJECT-LEARNINGS.md`
+- 横断の学び一覧: `/Users/user/addness/cursor/リスト作成/CROSS-PROJECT-LEARNINGS.md`
+- 改善ログ共通テンプレ: `/Users/user/addness/cursor/リスト作成/IMPROVEMENT-TEMPLATE.md`
 
 ## できること
 
