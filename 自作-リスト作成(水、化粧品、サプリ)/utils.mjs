@@ -62,23 +62,12 @@ export function yahooContactEmailFromFetched(contact) {
 }
 
 /**
- * 自社の「ファンケル」/「ファンケル サプリ」に揃え、同一店でもカテゴリでB列を分ける
- * （楽天・TV 等。Yahoo 一覧は A 列にカテゴリがあるため {@link shopDisplayNameForYahoo} を使う）
+ * A列にカテゴリがあるためB列には接尾辞を付けない
  * @param {string} shopName
- * @param {'化粧品'|'サプリメント'|'ウォーターサーバー'} category
+ * @param {'化粧品'|'サプリメント'|'ウォーターサーバー'} [_category]
  */
-export function shopDisplayNameForMarketplaceCategory(shopName, category) {
-  const base = String(shopName ?? '').trim();
-  if (!base) return base;
-  if (category === 'サプリメント') {
-    if (/サプリ|サプリメント|プロテイン|乳酸菌|青汁|ビタミン|健康食品|酵素|DHA|EPA|オメガ/i.test(base)) return base;
-    return `${base} サプリ`;
-  }
-  if (category === 'ウォーターサーバー') {
-    if (/ウォーター|宅配水|天然水|ミネラルウォーター|水サーバー|クリクラ|アクアクララ/i.test(base)) return base;
-    return `${base} ウォーター`;
-  }
-  return base;
+export function shopDisplayNameForMarketplaceCategory(shopName, _category) {
+  return String(shopName ?? '').trim();
 }
 
 /**
