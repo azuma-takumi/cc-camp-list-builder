@@ -2,8 +2,8 @@
 
 対象案件:
 
-- `cursor/リスト作成/CCキャンプ-リスト作成`
-- `cursor/リスト作成/自作-リスト作成(水、化粧品、サプリ)`
+- `cursor/list-builder/CCキャンプ-リスト作成`
+- `cursor/list-builder/自作-リスト作成(水、化粧品、サプリ)`
 
 このファイルは、案件固有のメモではなく、複数案件で再利用できる改善と学びを一覧化するためのものです。
 
@@ -37,11 +37,11 @@
 
 | 優先度 | テーマ | 担当案件 | 保留理由 | 次にやること | 実装候補ファイル |
 |---|---|---|---|---|---|
-| 高 | dry-run の完全統一 | 両方 | まだ全スクリプトで dry-run や範囲指定がそろっていない | 更新系・削除系の主要スクリプトに順次追加する | `cursor/リスト作成/CCキャンプ-リスト作成/tools/*.mjs`, `cursor/リスト作成/自作-リスト作成(水、化粧品、サプリ)/fix-yahoo-talk-urls.mjs`, `cursor/リスト作成/自作-リスト作成(水、化粧品、サプリ)/cleanup.mjs` |
-| 中 | APIコストの共通見える化 | CCキャンプ中心 | API利用案件ごとに可視化方法がばらつく | APIごとの使用量サマリー形式をそろえる | `cursor/リスト作成/CCキャンプ-リスト作成/tools/lib/youtube-api.mjs`, `cursor/リスト作成/CCキャンプ-リスト作成/tools/discover-youtube-sales-leads.mjs` |
-| 中 | 比較用キーの共通化 | 両方 | 重複判定キーが案件ごとに個別実装になりやすい | URL、ブランド名、会社名の正規化ルールを共通化する | `cursor/リスト作成/CCキャンプ-リスト作成/tools/lib/contact-discovery.mjs`, `cursor/リスト作成/自作-リスト作成(水、化粧品、サプリ)/utils.mjs`, `cursor/リスト作成/自作-リスト作成(水、化粧品、サプリ)/dedupe-sheets-by-brand-priority.mjs` |
-| 中 | 例外修正マップの共通化 | 両方 | 案件ごとに例外の持ち方が分かれている | 共通フォーマットを決めて、案件別に流用しやすくする | `cursor/リスト作成/CCキャンプ-リスト作成/tools/repair-youtube-sales-rows.mjs`, `cursor/リスト作成/自作-リスト作成(水、化粧品、サプリ)/fix-contacts.mjs` |
-| 中 | 要約標準化の全面展開 | 両方 | 主要収集系には入ったが、補正系や監査系はまだ未統一 | `latest-summary.md` か用途別サマリーを全主要スクリプトへ広げる | `cursor/リスト作成/CCキャンプ-リスト作成/tools/*.mjs`, `cursor/リスト作成/自作-リスト作成(水、化粧品、サプリ)/fix-*.mjs`, `cursor/リスト作成/自作-リスト作成(水、化粧品、サプリ)/verify-*.mjs` |
+| 高 | dry-run の完全統一 | 両方 | まだ全スクリプトで dry-run や範囲指定がそろっていない | 更新系・削除系の主要スクリプトに順次追加する | `cursor/list-builder/CCキャンプ-リスト作成/tools/*.mjs`, `cursor/list-builder/自作-リスト作成(水、化粧品、サプリ)/fix-yahoo-talk-urls.mjs`, `cursor/list-builder/自作-リスト作成(水、化粧品、サプリ)/cleanup.mjs` |
+| 中 | APIコストの共通見える化 | CCキャンプ中心 | API利用案件ごとに可視化方法がばらつく | APIごとの使用量サマリー形式をそろえる | `cursor/list-builder/CCキャンプ-リスト作成/tools/lib/youtube-api.mjs`, `cursor/list-builder/CCキャンプ-リスト作成/tools/discover-youtube-sales-leads.mjs` |
+| 中 | 比較用キーの共通化 | 両方 | 重複判定キーが案件ごとに個別実装になりやすい | URL、ブランド名、会社名の正規化ルールを共通化する | `cursor/list-builder/CCキャンプ-リスト作成/tools/lib/contact-discovery.mjs`, `cursor/list-builder/自作-リスト作成(水、化粧品、サプリ)/utils.mjs`, `cursor/list-builder/自作-リスト作成(水、化粧品、サプリ)/dedupe-sheets-by-brand-priority.mjs` |
+| 中 | 例外修正マップの共通化 | 両方 | 案件ごとに例外の持ち方が分かれている | 共通フォーマットを決めて、案件別に流用しやすくする | `cursor/list-builder/CCキャンプ-リスト作成/tools/repair-youtube-sales-rows.mjs`, `cursor/list-builder/自作-リスト作成(水、化粧品、サプリ)/fix-contacts.mjs` |
+| 中 | 要約標準化の全面展開 | 両方 | 主要収集系には入ったが、補正系や監査系はまだ未統一 | `latest-summary.md` か用途別サマリーを全主要スクリプトへ広げる | `cursor/list-builder/CCキャンプ-リスト作成/tools/*.mjs`, `cursor/list-builder/自作-リスト作成(水、化粧品、サプリ)/fix-*.mjs`, `cursor/list-builder/自作-リスト作成(水、化粧品、サプリ)/verify-*.mjs` |
 
 ### 保留項目の進め方メモ
 

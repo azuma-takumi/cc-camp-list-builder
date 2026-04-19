@@ -37,8 +37,8 @@ npm run fix:yahoo-talk
 ## 関連メモ
 
 - この案件の改善ログ: `IMPROVEMENTS.md`
-- 横断の学び一覧: `/Users/user/addness/cursor/リスト作成/CROSS-PROJECT-LEARNINGS.md`
-- 共通テンプレ: `/Users/user/addness/cursor/リスト作成/IMPROVEMENT-TEMPLATE.md`
+- 横断の学び一覧: `/Users/user/addness/cursor/list-builder/CROSS-PROJECT-LEARNINGS.md`
+- 共通テンプレ: `/Users/user/addness/cursor/list-builder/IMPROVEMENT-TEMPLATE.md`
 
 ## 補足
 
