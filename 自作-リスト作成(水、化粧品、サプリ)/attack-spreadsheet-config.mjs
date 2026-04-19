@@ -24,6 +24,8 @@ export const ATTACK_LIST_COPY_ROUTES = Object.freeze({
     expectedAttackSheetTitle: '1.TVショッピング',
     /** null = メインシートの全データ行を対象 */
     maxSourceDataRows: null,
+    /** B列（ブランド名キー）一致のアタック行をメインの A:E で上書き（メアド列の反映など） */
+    updateExistingRowsByBrandKey: true,
   }),
   own: Object.freeze({
     mainSheetTitle: '2.自社通販',

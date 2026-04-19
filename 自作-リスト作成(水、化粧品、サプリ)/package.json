@@ -32,7 +32,10 @@
     "dedupe:yahoo-url": "node dedupe-yahoo-url-category.mjs",
     "dedupe:yahoo-url:apply": "node dedupe-yahoo-url-category.mjs --apply",
     "fix:rakuten-names": "node fix-rakuten-shop-names-from-info.mjs --from=2",
-    "patch:headers-own-yahoo-rakuten": "node patch-header-contact-columns-own-yahoo-rakuten.mjs"
+    "patch:headers-own-yahoo-rakuten": "node patch-header-contact-columns-own-yahoo-rakuten.mjs",
+    "verify:tv": "node verify-shop-entries.mjs --sheet=tv",
+    "verify:own": "node verify-shop-entries.mjs --sheet=own",
+    "verify:all": "node verify-shop-entries.mjs --sheet=all"
   },
   "dependencies": {
     "dotenv": "^16.0.0",

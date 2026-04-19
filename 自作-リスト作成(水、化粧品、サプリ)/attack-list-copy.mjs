@@ -17,13 +17,15 @@ import { ATTACK_SPREADSHEET_ID, ATTACK_LIST_COPY_ROUTES } from './attack-spreads
 function getMainReadSpec(routeKey) {
   if (routeKey === 'yahoo') return { count: YAHOO_SHEET_COL_COUNT, letter: YAHOO_LAST_COL_LETTER };
   if (routeKey === 'rakuten') return { count: RAKUTEN_SHEET_COL_COUNT, letter: RAKUTEN_LAST_COL_LETTER };
-  return { count: 4, letter: 'D' };
+  // TV・自社通販は A〜E（F列以降はコピーしない）
+  return { count: 5, letter: 'E' };
 }
 
-/** アタックへ書く列（Yahoo/楽天は F 列を含めない） */
+/** アタックへ書く列（F 列は全ルートでコピーしない） */
 function getAttackWriteSpec(routeKey) {
-  if (routeKey === 'yahoo' || routeKey === 'rakuten') return { count: 5, letter: 'E' };
-  return { count: 4, letter: 'D' };
+  if (routeKey === 'rakuten') return { count: 5, letter: 'E' };
+  // yahoo / tv / own すべて A〜E
+  return { count: 5, letter: 'E' };
 }
 
 /** @typedef {'tv' | 'own' | 'yahoo' | 'rakuten'} AttackCopyRouteKey */
@@ -142,6 +144,8 @@ export async function copyMainSheetToAttackList(routeKey, options = {}) {
     if (!name && !url) continue;
     if (mainSpec.count === 6) {
       candidates.push([cat, name, url, d, e, f]);
+    } else if (mainSpec.count >= 5) {
+      candidates.push([cat, name, url, d, e]);
     } else {
       candidates.push([cat, name, url, d]);
     }
@@ -208,13 +212,14 @@ export async function copyMainSheetToAttackList(routeKey, options = {}) {
     }
   }
 
-  const existingUrls = new Set();
-  const existingNames = new Set();
+  // 重複キー = カテゴリ + URL（カテゴリが違えば同一URLでも別行として扱う）
+  const existingKeys = new Set();
   for (const row of workingTgtRows) {
+    const cat = String(row[0] ?? '').trim();
     const u = normalizeUrlKey(row[2]);
-    if (u) existingUrls.add(u);
     const nk = normalizeBrandNameKey(row[1] ?? '');
-    if (nk) existingNames.add(nk);
+    if (u) existingKeys.add(`${cat}::${u}`);
+    else if (nk) existingKeys.add(`${cat}::name::${nk}`);
   }
 
   const appendLimit = maxAppendRows != null ? maxAppendRows : Infinity;
@@ -225,14 +230,13 @@ export async function copyMainSheetToAttackList(routeKey, options = {}) {
     const url = row[2];
     const uKey = normalizeUrlKey(url);
     const nKey = normalizeBrandNameKey(name);
-    if (uKey && existingUrls.has(uKey)) continue;
-    if (!uKey && nKey && existingNames.has(nKey)) continue;
+    const dupKey = uKey ? `${cat}::${uKey}` : `${cat}::name::${nKey}`;
+    if (existingKeys.has(dupKey)) continue;
 
     const attackRow =
       attackSpec.count === 5 ? row.slice(0, 5) : [row[0], row[1], row[2], row[3]];
     toAppend.push(attackRow);
-    if (uKey) existingUrls.add(uKey);
-    if (nKey) existingNames.add(nKey);
+    existingKeys.add(dupKey);
     if (toAppend.length >= appendLimit) break;
   }
 
@@ -280,12 +284,42 @@ export async function copyMainSheetToAttackList(routeKey, options = {}) {
 
   const toAppendSanitized = toAppend.map((r) => sanitizeRowBForSheet(r, attackSpec.count));
 
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: ATTACK_SPREADSHEET_ID,
-    range: `'${targetTitle}'!A${startRow}:${attackSpec.letter}${startRow + toAppendSanitized.length - 1}`,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: { values: toAppendSanitized },
-  });
+  // シートの行数が足りない場合は先に拡張する
+  const neededRows = startRow + toAppendSanitized.length - 1;
+  const sheetMeta = await sheets.spreadsheets.get({ spreadsheetId: ATTACK_SPREADSHEET_ID, includeGridData: false });
+  const sheetObj = sheetMeta.data.sheets.find((s) => s.properties.title === targetTitle);
+  const currentRowCount = sheetObj?.properties?.gridProperties?.rowCount ?? 1000;
+  if (neededRows > currentRowCount) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: ATTACK_SPREADSHEET_ID,
+      requestBody: {
+        requests: [{
+          appendDimension: {
+            sheetId: sheetObj.properties.sheetId,
+            dimension: 'ROWS',
+            length: neededRows - currentRowCount + 100, // 少し余裕を持たせる
+          },
+        }],
+      },
+    });
+    console.log(`  シート行数を ${currentRowCount} → ${neededRows + 100} に拡張しました`);
+  }
+
+  // 大量行は 200 行ずつ分割して書き込む（API ペイロード制限対策）
+  const WRITE_CHUNK = 200;
+  for (let c = 0; c < toAppendSanitized.length; c += WRITE_CHUNK) {
+    const slice = toAppendSanitized.slice(c, c + WRITE_CHUNK);
+    const chunkStart = startRow + c;
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: ATTACK_SPREADSHEET_ID,
+      range: `'${targetTitle}'!A${chunkStart}:${attackSpec.letter}${chunkStart + slice.length - 1}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: slice },
+    });
+    if (toAppendSanitized.length > WRITE_CHUNK) {
+      console.log(`  書き込み ${chunkStart}〜${chunkStart + slice.length - 1} 行目 (${c + slice.length}/${toAppendSanitized.length})`);
+    }
+  }
 
   console.log('✅ 完了');
 }
