@@ -5,6 +5,7 @@ import { getYoutubeChannelMetricsByUrl } from "./lib/youtube-api.mjs";
 
 const SPREADSHEET_ID = "1E7sL6TjDiGWUF77uMAc88XK7OzXXS8wgDgwInI5Ad1c";
 const SHEET_NAME = "スポーツ用品業界：メールアドレス";
+const WRITER_NAME = "東たくみ";
 
 // `updateRows()` expects a zero-based column index.
 // F列=YouTubeチャンネルURL, G列=メールアドレス
@@ -27,8 +28,12 @@ async function main() {
   for (let offset = 0; offset < rows.length; offset += 1) {
     const rowNumber = startRow + offset;
     const row = rows[offset] || [];
+    const writer = String(row[1] || "").trim();
     const currentUrl = String(row[5] || "").trim();
 
+    if (writer !== WRITER_NAME) {
+      continue;
+    }
     if (!shouldProcessUrl(currentUrl)) {
       continue;
     }

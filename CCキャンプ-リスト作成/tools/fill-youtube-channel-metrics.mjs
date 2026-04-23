@@ -9,6 +9,7 @@ import {
 
 const SPREADSHEET_ID = "1E7sL6TjDiGWUF77uMAc88XK7OzXXS8wgDgwInI5Ad1c";
 const SHEET_NAME = "スポーツ用品業界：メールアドレス";
+const WRITER_NAME = "東たくみ";
 
 function findHeaderRow(rows) {
   return rows.findIndex(
@@ -29,6 +30,7 @@ async function main() {
   const targets = rows
     .map((row, index) => ({
       rowNumber: index + 1,
+      writer: String(row[1] || "").trim(),
       channelName: String(row[2] || "").trim(),
       youtubeUrl: String(row[5] || "").trim(),
       subscriberCount: String(row[8] || "").trim(),
@@ -36,7 +38,10 @@ async function main() {
     }))
     .filter(
       (row, index) =>
-        index > headerRowIndex && row.youtubeUrl && (!row.subscriberCount || !row.latestPublishedAt)
+        index > headerRowIndex &&
+        row.writer === WRITER_NAME &&
+        row.youtubeUrl &&
+        (!row.subscriberCount || !row.latestPublishedAt)
     );
 
   let updated = 0;

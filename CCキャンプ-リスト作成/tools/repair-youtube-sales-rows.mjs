@@ -11,6 +11,7 @@ import { getYoutubeChannelMetricsByUrl } from "./lib/youtube-api.mjs";
 
 const SPREADSHEET_ID = "1E7sL6TjDiGWUF77uMAc88XK7OzXXS8wgDgwInI5Ad1c";
 const SHEET_NAME = "スポーツ用品業界：メールアドレス";
+const WRITER_NAME = "東たくみ";
 const START_ROW = Number(process.env.START_ROW || "23");
 const END_ROW = Number(process.env.END_ROW || "58");
 
@@ -60,6 +61,7 @@ async function main() {
   for (let offset = 0; offset < rows.length; offset += 1) {
     const rowNumber = START_ROW + offset;
     const row = rows[offset] || [];
+    const writer = String(row[1] || "").trim();
     const channelName = String(row[2] || "").trim();
     const currentCompany = String(row[3] || "").trim();
     const currentRepresentative = normalizePersonName(row[4] || "");
@@ -68,7 +70,7 @@ async function main() {
     const currentSubscribers = String(row[8] || "").trim();
     const currentLatestDate = String(row[9] || "").trim();
 
-    if (!channelName) {
+    if (writer !== WRITER_NAME || !channelName) {
       continue;
     }
 

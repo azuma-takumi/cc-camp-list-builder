@@ -312,8 +312,12 @@ export async function searchYoutubeChannels(query, maxResults = 5) {
       (url) => !/youtube\.com|youtu\.be|instagram\.com|x\.com|twitter\.com|facebook\.com/i.test(url)
     ),
     emailCandidates: extractEmails(item.snippet?.description || ""),
-    channelUrl: item.snippet?.customUrl
-      ? `https://www.youtube.com/@${item.snippet.customUrl.replace(/^@/, "")}`
-      : `https://www.youtube.com/channel/${item.id}`,
+    channelUrl: (() => {
+      const handle = (item.snippet?.customUrl || "").replace(/^@/, "");
+      // 非ASCII（日本語）ハンドルは channel/UC... 形式にフォールバック
+      return handle && /^[\x00-\x7F]+$/.test(handle)
+        ? `https://www.youtube.com/@${handle}`
+        : `https://www.youtube.com/channel/${item.id}`;
+    })(),
   }));
 }

@@ -42,7 +42,7 @@ const CANDIDATE_PATHS = [
 
 const EMAIL_REGEX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const COMPANY_PATTERNS = [
-  /(?:運営会社|会社名|販売会社|商号)[^<\n]*[:：]?\s*([^\n<]{2,80})/i,
+  /(?:運営会社|会社名|販売会社|商号|事業者名|販売業者|ショップ名|店舗名|店名|屋号)[^<\n]*[:：]?\s*([^\n<]{2,80})/i,
   /((?:株式会社|合同会社|有限会社)[^。\n|]{1,40})/,
 ];
 const REPRESENTATIVE_PATTERNS = [

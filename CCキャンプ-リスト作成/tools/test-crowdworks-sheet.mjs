@@ -137,8 +137,8 @@ async function main() {
   }
 
   const startRow = findStartRow(rows, headerRowIndex);
-  const preparedRows = TEST_ROWS.map((item, index) => [
-    String(startRow - (headerRowIndex + 1) + index),
+  // A列（No）は色付き書式で問題検知に使われているため書き込まない。B列(index=1)から開始。
+  const preparedRows = TEST_ROWS.map((item) => [
     WRITER_NAME,
     item.channelName,
     item.companyName,
@@ -151,7 +151,7 @@ async function main() {
     item.fetchedAt,
   ]);
 
-  await updateRows(SHEET_NAME, startRow, 0, preparedRows);
+  await updateRows(SHEET_NAME, startRow, 1, preparedRows);
   const urlCheck = await checkYoutubeUrlColumn(startRow, TEST_ROWS.length);
 
   const sections = [];

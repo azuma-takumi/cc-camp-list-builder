@@ -1,0 +1,20 @@
+{
+  "name": "scraping-agent",
+  "version": "0.1.0",
+  "description": "Claude Code で動く汎用 Web スクレイピングエージェント。リサーチ結果を Google スプレッドシートに蓄積する。",
+  "type": "module",
+  "scripts": {
+    "auth": "node auth-google.mjs",
+    "init": "node tools/init-spreadsheet.mjs",
+    "create-template": "node tools/create-template-sheet.mjs",
+    "research": "node tools/research.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.0",
+    "googleapis": "^148.0.0",
+    "open": "^11.0.0",
+    "puppeteer": "^24.40.0"
+  }
+}

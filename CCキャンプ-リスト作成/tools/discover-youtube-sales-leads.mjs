@@ -10,6 +10,7 @@ import {
   sanitizeRepresentativeName,
 } from "./lib/contact-discovery.mjs";
 import {
+  getYoutubeChannelMetricsByUrl,
   getYoutubeQuotaUsageSummary,
   resetYoutubeQuotaUsage,
   searchYoutubeChannels,
@@ -19,13 +20,14 @@ import { searchBraveWeb } from "./lib/brave-search-api.mjs";
 import { appendDatedLog, writeStandardSummary } from "./lib/summary-writer.mjs";
 
 const SPREADSHEET_ID = "1E7sL6TjDiGWUF77uMAc88XK7OzXXS8wgDgwInI5Ad1c";
+const ORIGINAL_SPREADSHEET_ID = "1WG00opfjyNsUO6Apr-IEbH1KxmDlYyaGjPoV6LDnJd0";
 const SHEET_NAME = "スポーツ用品業界：メールアドレス";
 const WRITER_NAME = "東たくみ";
 const TARGET_WRITE_COUNT = Number(process.env.TARGET_WRITE_COUNT || "30");
 const ENABLE_BACKFILL = false;
-const QUERY_LIMIT = Number(process.env.QUERY_LIMIT || "14");
+const QUERY_LIMIT = Number(process.env.QUERY_LIMIT || "30");
 const QUERY_RESULTS_LIMIT = Number(process.env.QUERY_RESULTS_LIMIT || "10");
-const MAX_CANDIDATES = Number(process.env.MAX_CANDIDATES || "120");
+const MAX_CANDIDATES = Number(process.env.MAX_CANDIDATES || "200");
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LOG_DIR = join(__dirname, "..", "logs");
 
@@ -63,20 +65,78 @@ const FALLBACK_CANDIDATES = [
 ];
 
 const SEARCH_QUERIES = [
-  "スポーツ用品 公式",
-  "野球用品 公式",
-  "ゴルフ用品 公式",
-  "テニス用品 公式",
-  "サッカー用品 公式",
-  "ランニング用品 公式",
-  "アウトドア用品 公式",
-  "フィットネス用品 公式",
-  "バスケットボール用品 公式",
-  "バドミントン用品 公式",
-  "卓球用品 公式",
-  "登山用品 公式",
-  "トレーニング用品 公式",
-  "マラソン用品 公式",
+  // 地域 × ジャンル
+  "北海道 スポーツ用品店 公式",
+  "東北 スポーツ用品店 公式",
+  "北関東 スポーツ用品店 公式",
+  "東海 スポーツ用品店 公式",
+  "関西 スポーツ用品店 公式",
+  "中国 四国 スポーツ用品店 公式",
+  "九州 スポーツ用品店 公式",
+  "沖縄 スポーツ用品 公式",
+  // ニッチスポーツ用品
+  "アーチェリー 弓具店 公式",
+  "フェンシング 用具 販売 公式",
+  "ボクシング グローブ 販売 公式",
+  "レスリング 柔術 用品店 公式",
+  "ウエイトリフティング 用品 公式",
+  "トライアスロン 用品店 公式",
+  "カヌー カヤック 用品 公式",
+  "ロッククライミング 用品店 公式",
+  "スケートボード 用品店 公式",
+  "ラクロス フィールドホッケー 用品 公式",
+  "ソフトボール 用品店 公式",
+  "パドルテニス ピックルボール 用品 公式",
+  // 用品系メーカー特化
+  "スポーツ消耗品 用品メーカー 公式",
+  "野球グローブ メーカー 公式チャンネル",
+  "ゴルフシャフト メーカー 公式",
+  "テニスガット メーカー 公式",
+  "スポーツテーピング サポーター メーカー 公式",
+  "トレーニングウェア メーカー 公式チャンネル",
+  "スポーツ栄養 プロテイン メーカー 公式",
+  "スポーツ用品 卸売 メーカー 公式",
+  "学校体育 用品 メーカー 公式",
+  "スポーツ安全用具 プロテクター 販売 公式",
+  // ── 追加ニッチクエリ ──
+  // 種目専門店
+  "剣道 防具 道着 専門店 公式",
+  "弓道 弓具 矢 専門店 公式",
+  "空手 道着 防具 専門店 公式",
+  "合気道 柔道 武道 用品店 公式",
+  "相撲 まわし 行司 用品 公式",
+  "馬術 乗馬 馬具 用品店 公式",
+  "自転車 サイクル 用品店 公式",
+  "スノーボード スキー 用品店 公式",
+  "サーフィン ウィンドサーフィン 用品店 公式",
+  "マリンスポーツ ダイビング 用品店 公式",
+  "ハンドボール バレーボール 専門店 公式",
+  "バドミントン 専門店 用品 公式",
+  "卓球 専門店 ラケット 公式",
+  "水泳 競泳 水着 専門店 公式",
+  "陸上 短距離 マラソン シューズ 専門店",
+  "バスケットボール 専門店 公式チャンネル",
+  "ラグビー アメフト 用品店 公式",
+  "アウトドア スポーツ 用品店 公式",
+  "格闘技 MMA 用品 販売 公式",
+  "ヨット セーリング 用品 公式",
+  // ブランド・メーカー系
+  "スポーツ用品 オリジナル ブランド 公式",
+  "スポーツ アパレル ウェア 国内 メーカー 公式",
+  "スポーツ シューズ 専門 メーカー 公式",
+  "スポーツ バッグ ケース メーカー 公式",
+  "球技 ボール 製造 メーカー 公式",
+  // 地域特化
+  "北陸 石川 富山 スポーツ用品 公式",
+  "信越 長野 新潟 スポーツ用品 公式",
+  "山陰 鳥取 島根 スポーツ用品 公式",
+  "南九州 熊本 鹿児島 スポーツ用品 公式",
+  "関東 埼玉 千葉 スポーツ用品店 公式",
+  "関西 京都 奈良 スポーツ用品店 公式",
+  // 学校・チーム向け
+  "学校 部活動 スポーツ 用品 公式",
+  "チーム ユニフォーム オーダー スポーツ 公式",
+  "スポーツ チームウェア 制作 公式",
 ];
 
 function normalizeEmailSourceForSheet(value) {
@@ -140,6 +200,24 @@ function looksLikeOfficialSite(url) {
     !!url &&
     !/youtube\.com|youtu\.be|google\.com|instagram\.com|x\.com|twitter\.com|facebook\.com/i.test(url)
   );
+}
+
+const PERSONAL_EMAIL_DOMAINS = /^(gmail|yahoo|hotmail|outlook|icloud|me|live|msn|googlemail)\./i;
+// チャンネル名・会社名に含まれるべきスポーツ用品系キーワード
+const SPORTS_GOODS_KEYWORDS = /スポーツ用品|sport.*goods|用品|スポーツ|sport|アウトドア|outdoor|フィットネス|fitness|ゴルフ|golf|野球|テニス|サッカー|バスケ|バドミントン|卓球|剣道|弓道|柔道|空手|格闘技|武道|登山|ハイキング|サーフィン|スキー|スノーボード|自転車|サイクル|ランニング|マラソン|水泳|競泳|ウェットスーツ|グローブ|ラケット/i;
+// 除外業界（クライアント指定）
+const EXCLUDED_INDUSTRIES = /ボウリング|bowling|釣り|fishing|つり|フィッシング/i;
+
+function looksLikeSportsEquipmentChannel(channelName, companyName, email) {
+  // チャンネル名のみでスポーツ用品キーワードを判定（会社名は検索結果由来のノイズが多いため除外）
+  const hasSportsKeyword = SPORTS_GOODS_KEYWORDS.test(channelName);
+  const hasLegalEntity = /株式会社|有限会社|合同会社|一般社団法人|公益社団法人/.test(companyName || "");
+  const isCompanyEmail = email ? !PERSONAL_EMAIL_DOMAINS.test((email.split("@")[1] || "")) : false;
+
+  // チャンネル名にスポーツ用品キーワードは必須
+  if (!hasSportsKeyword) return false;
+  // 法人名あり または 会社ドメインメール → OK
+  return hasLegalEntity || isCompanyEmail;
 }
 
 async function resolveMetadataFromSearch(channelName) {
@@ -242,6 +320,8 @@ async function backfillExistingMetadata(rows, headerRowIndex) {
 
 async function main() {
   resetYoutubeQuotaUsage();
+
+  // 書き込み先：コピーシート
   saveSpreadsheetId(SPREADSHEET_ID);
   const rows = await readSheetValues(SHEET_NAME, "A:K");
   const headerRowIndex = findHeaderRow(rows);
@@ -251,9 +331,20 @@ async function main() {
 
   const backfilledRows = ENABLE_BACKFILL ? await backfillExistingMetadata(rows, headerRowIndex) : [];
   const startRow = findStartRow(rows, headerRowIndex);
-  const existingChannelNames = new Set(
-    rows.slice(headerRowIndex + 1).map((row) => String(row[2] || "").trim()).filter(Boolean)
-  );
+
+  // 重複チェック：オリジナルシートから既存チャンネル名・メールを取得
+  saveSpreadsheetId(ORIGINAL_SPREADSHEET_ID);
+  const originalRows = await readSheetValues(SHEET_NAME, "A:G");
+  const originalHeaderIdx = findHeaderRow(originalRows);
+  const existingChannelNames = new Set([
+    ...rows.slice(headerRowIndex + 1).map((row) => String(row[2] || "").trim()).filter(Boolean),
+    ...(originalHeaderIdx >= 0
+      ? originalRows.slice(originalHeaderIdx + 1).map((row) => String(row[2] || "").trim()).filter(Boolean)
+      : []),
+  ]);
+
+  // 書き込みはコピーシートに戻す
+  saveSpreadsheetId(SPREADSHEET_ID);
   const readyLeads = [];
   const unresolved = [];
   let candidates = [];
@@ -276,6 +367,11 @@ async function main() {
     if (existingChannelNames.has(candidate.channelName)) {
       continue;
     }
+
+    if (EXCLUDED_INDUSTRIES.test(candidate.channelName)) {
+      continue;
+    }
+
 
     const checkedYoutubeUrl = await validateAndRepairUrl(candidate.youtubeUrl);
     const metadata =
@@ -306,8 +402,14 @@ async function main() {
       ),
     };
 
-    if (lead.email) {
+    if (lead.email && looksLikeSportsEquipmentChannel(lead.channelName, lead.companyName, lead.email)) {
+      // チャンネル登録者数・最終投稿日を取得
+      const metrics = await getYoutubeChannelMetricsByUrl(lead.youtubeUrl);
+      lead.subscriberCount = metrics?.subscriberCount || "";
+      lead.latestVideoPublishedAt = metrics?.latestVideoPublishedAt || "";
       readyLeads.push(lead);
+    } else if (lead.email) {
+      unresolved.push({ ...lead, siteUrl: resolvedSiteUrl, logs: [...checkedYoutubeUrl.logs, ...contact.logs, "スキップ: スポーツ用品企業と判定できず"] });
     } else {
       unresolved.push({
         ...lead,
@@ -318,8 +420,8 @@ async function main() {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const preparedRows = readyLeads.slice(0, TARGET_WRITE_COUNT).map((lead, index) => [
-    String(startRow - (headerRowIndex + 1) + index),
+  // A列（No）は色付き書式で問題検知に使われているため書き込まない。B列(index=1)から開始。
+  const preparedRows = readyLeads.slice(0, TARGET_WRITE_COUNT).map((lead) => [
     WRITER_NAME,
     lead.channelName,
     lead.companyName,
@@ -327,13 +429,13 @@ async function main() {
     lead.youtubeUrl,
     lead.email,
     lead.emailSource,
-    "",
-    "",
+    lead.subscriberCount,
+    lead.latestVideoPublishedAt,
     today,
   ]);
 
   if (preparedRows.length) {
-    await updateRows(SHEET_NAME, startRow, 0, preparedRows);
+    await updateRows(SHEET_NAME, startRow, 1, preparedRows);
   }
 
   const quotaSummary = getYoutubeQuotaUsageSummary();

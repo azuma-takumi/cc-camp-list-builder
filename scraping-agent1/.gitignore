@@ -1,0 +1,20 @@
+node_modules/
+.env
+credentials/tokens.json
+.scrape-profiles/
+scrapers/*.local.mjs
+
+# API 使用量カウンタ(月次で自動リセット、ローカル限定)
+.usage.json
+
+# Claude Code / Cursor の個人設定(承認履歴に APIキーが平文で残ることがある)
+.claude/settings.local.json
+.cursor/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

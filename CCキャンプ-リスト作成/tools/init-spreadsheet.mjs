@@ -13,10 +13,11 @@
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { google } from "googleapis";
 import dotenv from "dotenv";
 
-const PROJECT_ROOT = join(dirname(import.meta.url.replace("file://", "")), "..");
+const PROJECT_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 dotenv.config({ path: join(PROJECT_ROOT, ".env") });
 
 let SPREADSHEET_ID = process.env.SPREADSHEET_ID;
